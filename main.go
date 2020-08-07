@@ -21,39 +21,44 @@ func abs(n int) int64 {
 
 func main() {
 	client := bnkdev.NewClient(os.Getenv("BNKDEV_API_KEY"))
-	account := os.Getenv("BNKDEV_ACCOUNT_ID")
 	ctx := context.Background()
 
-	resp, err := client.ListTransactions(ctx, &bnkdev.ListTransactionsRequest{
-		AccountID: account,
-	})
+	accounts, err := client.ListAccounts(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var entries []ynab.Entry
-	for _, tx := range resp.Data {
-		date, err := time.Parse("2006-01-02", tx.Date)
+	for _, account := range accounts.Data {
+		transactions, err := client.ListTransactions(ctx, &bnkdev.ListTransactionsRequest{
+			AccountID: account.ID,
+		})
 		if err != nil {
 			log.Fatal(err)
 		}
-		entry := ynab.Entry{
-			Date:  date,
-			Payee: tx.AccountID,
-			Memo:  tx.Description,
-		}
-		if tx.Amount >= 0 {
-			entry.Inflow = sql.NullInt64{
-				Int64: abs(tx.Amount),
-				Valid: true,
+		for _, tx := range transactions.Data {
+			date, err := time.Parse("2006-01-02", tx.Date)
+			if err != nil {
+				log.Fatal(err)
 			}
-		} else {
-			entry.Outflow = sql.NullInt64{
-				Int64: abs(tx.Amount),
-				Valid: true,
+			entry := ynab.Entry{
+				Date:  date,
+				Payee: "bnk.dev: " + account.Name,
+				Memo:  tx.Description,
 			}
+			if tx.Amount >= 0 {
+				entry.Inflow = sql.NullInt64{
+					Int64: abs(tx.Amount),
+					Valid: true,
+				}
+			} else {
+				entry.Outflow = sql.NullInt64{
+					Int64: abs(tx.Amount),
+					Valid: true,
+				}
+			}
+			entries = append(entries, entry)
 		}
-		entries = append(entries, entry)
 	}
 
 	out, err := ynab.Encode(entries)

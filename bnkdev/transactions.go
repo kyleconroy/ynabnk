@@ -17,10 +17,6 @@ type ListTransactionsResponse struct {
 	ResponseMetadata ResponseMetadata `json:"response_metadata,omitempty"`
 }
 
-type ResponseMetadata struct {
-	NextCursor string `json:"next_cursor,omitempty"`
-}
-
 // Transactions are the immutable additions and removals of money from your
 // bank account.
 type Transaction struct {

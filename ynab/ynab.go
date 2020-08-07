@@ -32,7 +32,7 @@ func record(e *Entry) []string {
 		in = money(e.Inflow.Int64)
 	}
 	return []string{
-		e.Date.Format("01/02/06"),
+		e.Date.Format("2006-01-02"),
 		e.Payee,
 		e.Memo,
 		out,
